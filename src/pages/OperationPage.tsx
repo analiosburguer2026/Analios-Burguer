@@ -99,9 +99,16 @@ export function OperationPage() {
             >
               <p className="text-xs opacity-70">Mesa</p><p className="font-display text-2xl">{table.number}</p>
               <p className="mt-1 text-xs">{table.status === "occupied" ? "Comanda aberta" : "Comanda fechada"}</p>
-              <button type="button" onClick={() => { setSelectedTableId(table.id); setTableStatus(table.id, table.status === "free" ? "occupied" : "free", table.status === "free" ? "Atendimento" : undefined); }} className="mt-2 rounded-md bg-black/10 px-2 py-1 text-xs font-semibold">
-                {table.status === "occupied" ? "Fechar comanda" : "Abrir comanda"}
-              </button>
+              <div className="mt-2 flex flex-wrap justify-center gap-2">
+                {table.status === "occupied" && (
+                  <button type="button" onClick={() => setSelectedTableId(table.id)} className="rounded-md bg-white/90 px-2 py-1 text-xs font-semibold text-brand-orange">
+                    Novo pedido
+                  </button>
+                )}
+                <button type="button" onClick={() => { setSelectedTableId(table.id); setTableStatus(table.id, table.status === "free" ? "occupied" : "free", table.status === "free" ? "Atendimento" : undefined); }} className="rounded-md bg-black/10 px-2 py-1 text-xs font-semibold">
+                  {table.status === "occupied" ? "Fechar comanda" : "Abrir comanda"}
+                </button>
+              </div>
             </div>
           ))}
         </CardBody>
@@ -109,7 +116,10 @@ export function OperationPage() {
 
       {selectedTable && (
         <Card>
-          <CardHeader><h2 className="font-semibold">Comanda da mesa {selectedTable.number}</h2></CardHeader>
+          <CardHeader>
+            <h2 className="font-semibold">Novo pedido · Mesa {selectedTable.number}</h2>
+            <p className="text-xs text-black/50">Este pedido será vinculado somente à comanda, sem cadastro de cliente.</p>
+          </CardHeader>
           <CardBody className="space-y-4">
             <form onSubmit={addTableOrder} className="grid gap-3 sm:grid-cols-[1fr_120px_auto]">
               <Select value={selectedProductId} onChange={(event) => setSelectedProductId(event.target.value)}>
