@@ -176,6 +176,8 @@ export interface StoreSettings {
   deliveryFee: number;
   freeDeliveryAbove?: number;
   serviceMode: "delivery" | "pickup" | "both";
+  announcementText?: string;
+  announcementTone?: "red" | "orange";
   openingHours: string;
   loyalty: LoyaltySettings;
 }

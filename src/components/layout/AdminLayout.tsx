@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { useState } from "react";
 import {
   LayoutDashboard,
   UtensilsCrossed,
@@ -12,6 +13,8 @@ import {
   Store,
   FileBarChart,
   Utensils,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import logoSimbolo from "../../assets/logos/logo-simbolo.png";
 
@@ -30,17 +33,21 @@ const navItems = [
 ];
 
 export function AdminLayout() {
+  const [collapsed, setCollapsed] = useState(false);
   return (
     <div className="flex min-h-screen bg-[#fbf6ee]">
-      <aside className="fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-brand-black text-white">
-        <div className="flex items-center gap-3 border-b border-white/10 px-5 py-5">
+      <aside className={`fixed inset-y-0 left-0 z-40 flex flex-col bg-brand-black text-white transition-all ${collapsed ? "w-20" : "w-64"}`}>
+        <div className={`flex items-center border-b border-white/10 px-4 py-5 ${collapsed ? "justify-center" : "gap-3"}`}>
           <img src={logoSimbolo} alt="Analio's Burguer" className="h-11 w-11 object-contain" />
-          <div>
+          {!collapsed && <div>
             <p className="font-display text-lg leading-tight text-brand-cream">
               Analio's Burguer
             </p>
             <p className="text-xs text-white/50">Painel de Gestão</p>
-          </div>
+          </div>}
+          <button type="button" aria-label={collapsed ? "Expandir menu" : "Recolher menu"} onClick={() => setCollapsed((value) => !value)} className={`${collapsed ? "absolute -right-3 top-6" : "ml-auto"} rounded-full bg-brand-orange p-1.5 text-white shadow`}>
+            {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
+          </button>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
@@ -58,7 +65,7 @@ export function AdminLayout() {
               }
             >
               <Icon size={18} />
-              {label}
+              {!collapsed && label}
             </NavLink>
           ))}
         </nav>
@@ -70,12 +77,12 @@ export function AdminLayout() {
             className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-brand-cream/90 hover:bg-white/5"
           >
             <Store size={18} />
-            Ver cardápio público
+            {!collapsed && "Ver cardápio público"}
           </NavLink>
         </div>
       </aside>
 
-      <main className="ml-64 flex-1 p-6">
+      <main className={`${collapsed ? "ml-20" : "ml-64"} flex-1 p-6 transition-all`}>
         <Outlet />
       </main>
     </div>

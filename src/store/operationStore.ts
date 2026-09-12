@@ -12,6 +12,7 @@ interface OperationState {
   openCash: (amount: number) => void;
   closeCash: () => void;
   addCashEntry: (entry: Omit<CashEntry, "id" | "createdAt">) => void;
+  setTableCount: (count: number) => void;
 }
 
 const initialTables: StoreTable[] = Array.from({ length: 12 }, (_, index) => ({
@@ -46,6 +47,22 @@ export const useOperationStore = create<OperationState>()(
         set((state) => ({
           cashEntries: [{ ...entry, id: uuid(), createdAt: new Date().toISOString() }, ...state.cashEntries],
         })),
+      setTableCount: (count) =>
+        set((state) => {
+          const safeCount = Math.max(1, Math.min(100, Math.floor(count)));
+          if (safeCount < state.tables.length && state.tables.slice(safeCount).some((table) => table.status !== "free")) {
+            return state;
+          }
+          return {
+            tables: Array.from({ length: safeCount }, (_, index) =>
+              state.tables[index] ?? {
+                id: `table-${index + 1}`,
+                number: index + 1,
+                status: "free",
+              },
+            ),
+          };
+        }),
     }),
     { name: "analios-operation" },
   ),

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { MessageCircle, MapPin, Clock, ShoppingBag, X, Search, SlidersHorizontal, Phone } from "lucide-react";
+import { MessageCircle, MapPin, Clock, ShoppingBag, X, Search, SlidersHorizontal, Phone, Megaphone } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCatalogStore } from "../../store/catalogStore";
 import { usePromotionStore, isPromotionCurrentlyValid } from "../../store/promotionStore";
@@ -43,6 +43,11 @@ export function PublicMenuPage() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const validPromotions = promotions.filter(isPromotionCurrentlyValid);
+  const headerAnnouncement =
+    settings.announcementText?.trim() ||
+    (validPromotions.length > 0
+      ? `Promoção: ${validPromotions[0].name}${validPromotions[0].description ? ` - ${validPromotions[0].description}` : ""}`
+      : "");
 
   useEffect(() => {
     let active = true;
@@ -212,6 +217,11 @@ export function PublicMenuPage() {
   return (
     <div className="min-h-screen bg-[#fbf6ee] pb-28">
       <header className="bg-brand-black text-white">
+        {headerAnnouncement && (
+          <div className={`flex items-center justify-center gap-2 px-4 py-3 text-center text-sm font-bold ${settings.announcementTone === "orange" ? "bg-brand-orange" : "bg-red-600"}`}>
+            <Megaphone size={18} /> {headerAnnouncement}
+          </div>
+        )}
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 px-4 py-10 text-center">
           <img src={logoOriginal} alt={settings.storeName} className="h-32 object-contain" />
           <p className="font-display text-3xl text-brand-cream">{settings.storeName}</p>

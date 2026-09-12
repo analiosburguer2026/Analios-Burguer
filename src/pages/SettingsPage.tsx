@@ -114,6 +114,13 @@ export function SettingsPage() {
               <option value="both">Entrega e retirada na loja</option>
             </Select>
           </Field>
+          <Field label="Aviso destacado no cardápio" hint="Deixe vazio para não exibir. Ex.: Hoje tem promoção de combo!">
+            <Input
+              value={settings.announcementText ?? ""}
+              onChange={(e) => updateSettings({ announcementText: e.target.value })}
+              placeholder="Mensagem importante para os clientes"
+            />
+          </Field>
           <Field label="Endereço">
             <Input value={settings.address} onChange={(e) => updateSettings({ address: e.target.value })} />
           </Field>

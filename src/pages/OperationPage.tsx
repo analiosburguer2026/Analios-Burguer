@@ -11,7 +11,7 @@ import { formatCurrency } from "../lib/utils";
 import type { CashEntryType } from "../types";
 
 export function OperationPage() {
-  const { tables, cashOpen, cashOpeningAmount, cashEntries, setTableStatus, openCash, closeCash, addCashEntry } =
+  const { tables, cashOpen, cashOpeningAmount, cashEntries, setTableStatus, setTableCount, openCash, closeCash, addCashEntry } =
     useOperationStore();
   const orders = useOrderStore((state) => state.orders);
   const [openingAmount, setOpeningAmount] = useState("0");
@@ -53,18 +53,20 @@ export function OperationPage() {
       </div>
 
       <Card>
-        <CardHeader><div className="flex items-center justify-between"><h2 className="font-semibold">Mesas e comandas</h2><span className="text-xs text-black/50">Clique para abrir/fechar uma comanda</span></div></CardHeader>
+        <CardHeader><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-semibold">Mesas e comandas</h2><span className="text-xs text-black/50">Abra e feche comandas individualmente</span></div><label className="flex items-center gap-2 text-sm">Quantidade de mesas<Input className="w-20" type="number" min="1" max="100" value={tables.length} onChange={(event) => setTableCount(Number(event.target.value))} /></label></div></CardHeader>
         <CardBody className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
           {tables.map((table) => (
             <button
               key={table.id}
-              onClick={() => setTableStatus(table.id, table.status === "free" ? "occupied" : "free", table.status === "free" ? "Atendimento" : undefined)}
               className={`rounded-xl border p-4 text-center transition ${
                 table.status === "occupied" ? "border-brand-orange bg-brand-orange text-white" : "border-black/10 bg-white hover:border-brand-orange"
               }`}
             >
               <p className="text-xs opacity-70">Mesa</p><p className="font-display text-2xl">{table.number}</p>
-              <p className="mt-1 text-xs">{table.status === "occupied" ? "Ocupada" : "Livre"}</p>
+              <p className="mt-1 text-xs">{table.status === "occupied" ? "Comanda aberta" : "Comanda fechada"}</p>
+              <span role="button" tabIndex={0} onClick={() => setTableStatus(table.id, table.status === "free" ? "occupied" : "free", table.status === "free" ? "Atendimento" : undefined)} className="mt-2 inline-block rounded-md bg-black/10 px-2 py-1 text-xs font-semibold">
+                {table.status === "occupied" ? "Fechar comanda" : "Abrir comanda"}
+              </span>
             </button>
           ))}
         </CardBody>
