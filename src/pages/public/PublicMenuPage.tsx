@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { MessageCircle, MapPin, Clock, ShoppingBag, X, Search, SlidersHorizontal, Phone, Megaphone } from "lucide-react";
+import { MessageCircle, MapPin, Clock, ShoppingBag, X, Search, SlidersHorizontal, Phone, Megaphone, LocateFixed, Plus, Minus } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCatalogStore } from "../../store/catalogStore";
 import { usePromotionStore, isPromotionCurrentlyValid } from "../../store/promotionStore";
@@ -17,6 +17,7 @@ interface CartLine {
   price: number;
   quantity: number;
   addons?: ProductAddon[];
+  notes?: string;
 }
 
 export function PublicMenuPage() {
@@ -45,6 +46,9 @@ export function PublicMenuPage() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [addonProduct, setAddonProduct] = useState<{ id: string; name: string; price: number; addons: ProductAddon[] } | null>(null);
   const [selectedAddons, setSelectedAddons] = useState<ProductAddon[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState("");
   const validPromotions = promotions.filter(isPromotionCurrentlyValid);
   const headerAnnouncement =
     settings.announcementText?.trim() ||
@@ -108,14 +112,49 @@ export function PublicMenuPage() {
     });
   }
 
-  function removeFromCart(productId: string) {
-    setCart((c) => {
-      const existing = c.find((l) => l.productId === productId);
-      if (existing && existing.quantity > 1) {
-        return c.map((l) => (l.productId === productId ? { ...l, quantity: l.quantity - 1 } : l));
+  function changeQuantity(index: number, delta: number) {
+    setCart((items) => items.flatMap((item, itemIndex) => {
+      if (itemIndex !== index) return [item];
+      const quantity = item.quantity + delta;
+      return quantity > 0 ? [{ ...item, quantity }] : [];
+    }));
+  }
+
+  function updateCartNotes(index: number, notes: string) {
+    setCart((items) => items.map((item, itemIndex) => itemIndex === index ? { ...item, notes } : item));
+  }
+
+  function useCurrentLocation() {
+    if (!navigator.geolocation) {
+      setLocationError("Seu dispositivo não oferece localização automática.");
+      return;
+    }
+    setLocating(true);
+    setLocationError("");
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.latitude}&lon=${coords.longitude}`, { headers: { Accept: "application/json" } });
+        if (!response.ok) throw new Error("Falha ao consultar endereço");
+        const data = await response.json();
+        const addressData = data.address ?? {};
+        setAddress((current) => ({
+          ...current,
+          street: addressData.road || current.street,
+          number: addressData.house_number || current.number,
+          neighborhood: addressData.suburb || addressData.neighbourhood || current.neighborhood,
+          city: addressData.city || addressData.town || addressData.village || current.city,
+          reference: current.reference || `Localização GPS: ${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}`,
+        }));
+      } catch {
+        setAddress((current) => ({ ...current, reference: `Localização GPS: ${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}` }));
+        setLocationError("Localização obtida. Confira e complete o endereço manualmente.");
+      } finally {
+        setLocating(false);
       }
-      return c.filter((l) => l.productId !== productId);
-    });
+    }, () => {
+      setLocating(false);
+      setLocationError("Não foi possível acessar sua localização. Autorize o GPS ou preencha manualmente.");
+    }, { enableHighAccuracy: true, timeout: 10000 });
   }
 
   const total = useMemo(() => cart.reduce((sum, l) => sum + l.price * l.quantity, 0), [cart]);
@@ -163,6 +202,7 @@ export function PublicMenuPage() {
         quantity: line.quantity,
         unitPrice: line.price,
         addons: line.addons,
+        notes: line.notes,
       })),
       type: orderType,
       address: orderType === "delivery" ? address : undefined,
@@ -394,14 +434,14 @@ export function PublicMenuPage() {
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-white p-4 shadow-2xl">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap gap-2 max-w-md">
-              {cart.map((l) => (
+              {cart.map((l, index) => (
                 <span
                   key={`${l.productId}-${JSON.stringify(l.addons ?? [])}`}
                   className="flex items-center gap-2 rounded-full bg-brand-cream/60 px-3 py-1 text-xs"
                 >
                   {l.quantity}x {l.name}{l.addons?.length ? ` + ${l.addons.map((addon) => addon.name).join(", ")}` : ""}
                   <button
-                    onClick={() => removeFromCart(l.productId)}
+                    onClick={() => changeQuantity(index, -1)}
                     className="font-bold text-brand-orange"
                   >
                     -
@@ -414,12 +454,48 @@ export function PublicMenuPage() {
                 {totalItems} item(s) · {formatCurrency(total)}
               </span>
               <button
+                type="button"
+                onClick={() => setCartOpen(true)}
+                className="rounded-lg border border-brand-orange px-3 py-2.5 text-sm font-semibold text-brand-orange"
+              >
+                Ver carrinho
+              </button>
+              <button
                 onClick={openCheckout}
                 className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700"
               >
                 <ShoppingBag size={16} /> Finalizar pedido
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {cartOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-display text-2xl">Seu carrinho</h2>
+              <button type="button" onClick={() => setCartOpen(false)} aria-label="Fechar"><X size={20} /></button>
+            </div>
+            <div className="space-y-4">
+              {cart.map((line, index) => (
+                <div key={`${line.productId}-${index}`} className="rounded-xl border border-black/10 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div><p className="font-semibold">{line.name}</p><p className="text-xs text-black/50">{line.addons?.length ? `Adicionais: ${line.addons.map((addon) => addon.name).join(", ")}` : "Sem adicionais"}</p></div>
+                    <strong>{formatCurrency(line.price * line.quantity)}</strong>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2"><button type="button" onClick={() => changeQuantity(index, -1)} className="rounded-full border p-1"><Minus size={14} /></button><span className="min-w-5 text-center">{line.quantity}</span><button type="button" onClick={() => changeQuantity(index, 1)} className="rounded-full border p-1"><Plus size={14} /></button></div>
+                    <button type="button" className="text-xs font-semibold text-red-600" onClick={() => setCart((items) => items.filter((_, itemIndex) => itemIndex !== index))}>Remover</button>
+                  </div>
+                  <label className="mt-3 block text-xs font-semibold text-black/60">Observação do item
+                    <input value={line.notes ?? ""} onChange={(event) => updateCartNotes(index, event.target.value)} placeholder="Ex.: sem cebola, bem passado..." className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2 text-sm font-normal" />
+                  </label>
+                  <div className="mt-2 flex flex-wrap gap-2">{["Sem cebola", "Sem picles", "Molho à parte"].map((suggestion) => <button type="button" key={suggestion} onClick={() => updateCartNotes(index, line.notes === suggestion ? "" : suggestion)} className={`rounded-full border px-2 py-1 text-xs ${line.notes === suggestion ? "border-brand-orange bg-brand-orange/10" : "border-black/10"}`}>{suggestion}</button>)}</div>
+                </div>
+              ))}
+            </div>
+            <button type="button" onClick={() => { setCartOpen(false); openCheckout(); }} className="mt-5 w-full rounded-lg bg-green-600 px-4 py-3 font-semibold text-white">Ir para checkout · {formatCurrency(orderTotal)}</button>
           </div>
         </div>
       )}
@@ -442,6 +518,10 @@ export function PublicMenuPage() {
             </div>
             {orderType === "delivery" && (
               <div className="grid grid-cols-2 gap-3">
+                <button type="button" onClick={useCurrentLocation} disabled={locating} className="col-span-2 flex items-center justify-center gap-2 rounded-lg border border-brand-orange px-3 py-2 text-sm font-semibold text-brand-orange disabled:opacity-60">
+                  <LocateFixed size={16} /> {locating ? "Buscando localização..." : "Usar minha localização atual"}
+                </button>
+                {locationError && <p className="col-span-2 text-xs text-amber-700">{locationError}</p>}
                 <div className="col-span-2 flex flex-wrap items-center gap-2">
                   <input
                     inputMode="numeric"
