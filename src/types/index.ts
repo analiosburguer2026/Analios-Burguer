@@ -120,6 +120,8 @@ export interface Order {
   customerPhone: string;
   items: OrderItem[];
   type: OrderType;
+  tableId?: ID;
+  tableNumber?: number;
   address?: Address;
   motoboyId?: ID;
   status: OrderStatus;

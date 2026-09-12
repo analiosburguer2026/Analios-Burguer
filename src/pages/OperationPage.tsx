@@ -7,6 +7,7 @@ import { Button } from "../components/ui/Button";
 import { Input, Select } from "../components/ui/Form";
 import { useOperationStore } from "../store/operationStore";
 import { useOrderStore } from "../store/orderStore";
+import { useCatalogStore } from "../store/catalogStore";
 import { formatCurrency } from "../lib/utils";
 import type { CashEntryType } from "../types";
 
@@ -14,6 +15,11 @@ export function OperationPage() {
   const { tables, cashOpen, cashOpeningAmount, cashEntries, setTableStatus, setTableCount, openCash, closeCash, addCashEntry } =
     useOperationStore();
   const orders = useOrderStore((state) => state.orders);
+  const addOrder = useOrderStore((state) => state.addOrder);
+  const products = useCatalogStore((state) => state.products);
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState("");
+  const [productQuantity, setProductQuantity] = useState("1");
   const [openingAmount, setOpeningAmount] = useState("0");
   const [entryAmount, setEntryAmount] = useState("");
   const [entryDescription, setEntryDescription] = useState("");
@@ -26,6 +32,35 @@ export function OperationPage() {
       todayEntries.reduce((sum, entry) => (entry.type === "withdrawal" ? sum - entry.amount : sum + entry.amount), 0),
     [cashOpeningAmount, todayEntries],
   );
+  const selectedTable = tables.find((table) => table.id === selectedTableId);
+  const tableOrders = orders.filter((order) => order.tableId === selectedTableId && order.status !== "cancelled");
+
+  function addTableOrder(event: FormEvent) {
+    event.preventDefault();
+    if (!selectedTable || !selectedProductId) return;
+    const product = products.find((item) => item.id === selectedProductId);
+    const quantity = Math.max(1, Number(productQuantity) || 1);
+    if (!product) return;
+    const subtotal = product.basePrice * quantity;
+    addOrder({
+      customerName: selectedTable.customerName || "Cliente da mesa",
+      customerPhone: "",
+      items: [{ id: crypto.randomUUID(), productId: product.id, productName: product.name, quantity, unitPrice: product.basePrice }],
+      type: "local",
+      tableId: selectedTable.id,
+      tableNumber: selectedTable.number,
+      status: "pending",
+      paymentMethod: "cash",
+      subtotal,
+      discount: 0,
+      deliveryFee: 0,
+      total: subtotal,
+      pointsEarned: 0,
+      pointsRedeemed: 0,
+    });
+    setSelectedProductId("");
+    setProductQuantity("1");
+  }
 
   function handleCashEntry(event: FormEvent) {
     event.preventDefault();
@@ -64,13 +99,30 @@ export function OperationPage() {
             >
               <p className="text-xs opacity-70">Mesa</p><p className="font-display text-2xl">{table.number}</p>
               <p className="mt-1 text-xs">{table.status === "occupied" ? "Comanda aberta" : "Comanda fechada"}</p>
-              <button type="button" onClick={() => setTableStatus(table.id, table.status === "free" ? "occupied" : "free", table.status === "free" ? "Atendimento" : undefined)} className="mt-2 rounded-md bg-black/10 px-2 py-1 text-xs font-semibold">
+              <button type="button" onClick={() => { setSelectedTableId(table.id); setTableStatus(table.id, table.status === "free" ? "occupied" : "free", table.status === "free" ? "Atendimento" : undefined); }} className="mt-2 rounded-md bg-black/10 px-2 py-1 text-xs font-semibold">
                 {table.status === "occupied" ? "Fechar comanda" : "Abrir comanda"}
               </button>
             </div>
           ))}
         </CardBody>
       </Card>
+
+      {selectedTable && (
+        <Card>
+          <CardHeader><h2 className="font-semibold">Comanda da mesa {selectedTable.number}</h2></CardHeader>
+          <CardBody className="space-y-4">
+            <form onSubmit={addTableOrder} className="grid gap-3 sm:grid-cols-[1fr_120px_auto]">
+              <Select value={selectedProductId} onChange={(event) => setSelectedProductId(event.target.value)}>
+                <option value="">Selecione um produto</option>
+                {products.filter((product) => product.active).map((product) => <option key={product.id} value={product.id}>{product.name} - {formatCurrency(product.basePrice)}</option>)}
+              </Select>
+              <Input type="number" min="1" value={productQuantity} onChange={(event) => setProductQuantity(event.target.value)} />
+              <Button type="submit">Lançar pedido</Button>
+            </form>
+            {tableOrders.length === 0 ? <p className="text-sm text-black/50">Nenhum item lançado nesta comanda.</p> : tableOrders.map((order) => <div key={order.id} className="flex justify-between border-b border-black/5 py-2 text-sm"><span>{order.code} · {order.items.map((item) => `${item.quantity}x ${item.productName}`).join(", ")}</span><strong>{formatCurrency(order.total)}</strong></div>)}
+          </CardBody>
+        </Card>
+      )}
 
       <Card>
         <CardHeader><div className="flex items-center justify-between"><h2 className="font-semibold">Caixa</h2><span className={`text-xs font-semibold ${cashOpen ? "text-green-700" : "text-red-600"}`}>{cashOpen ? "Caixa aberto" : "Caixa fechado"}</span></div></CardHeader>

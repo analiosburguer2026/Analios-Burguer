@@ -31,11 +31,13 @@ export function CustomerPortalPage() {
       customers.find(
         (item) =>
           item.id === (sessionPhone || sessionCustomerId) ||
-          item.phone.replace(/\D/g, "") === sessionPhone.replace(/\D/g, ""),
+          String(item.phone ?? "").replace(/\D/g, "") === sessionPhone.replace(/\D/g, ""),
       ),
     [customers, remoteCustomer, sessionCustomerId, sessionPhone],
   );
   const customerOrders = orders.filter((order) => order.customerId === customer?.id);
+  const customerPoints = Number(customer?.loyaltyPoints ?? 0);
+  const customerTotalSpent = Number(customer?.totalSpent ?? 0);
 
   useEffect(() => {
     const savedPhone = sessionStorage.getItem("analios-customer-phone");
@@ -153,12 +155,12 @@ export function CustomerPortalPage() {
             <div className="rounded-2xl bg-brand-orange p-5 text-white">
               <Award size={24} />
               <p className="mt-3 text-sm opacity-80">Pontos disponíveis</p>
-              <p className="font-display text-3xl">{customer.loyaltyPoints}</p>
+              <p className="font-display text-3xl">{customerPoints}</p>
             </div>
             <div className="rounded-2xl bg-white p-5 shadow-sm">
               <ClipboardList size={24} className="text-brand-orange" />
               <p className="mt-3 text-sm text-black/50">Total em pedidos</p>
-              <p className="font-display text-2xl">{formatCurrency(customer.totalSpent)}</p>
+              <p className="font-display text-2xl">{formatCurrency(customerTotalSpent)}</p>
             </div>
           </div>
           <section className="rounded-2xl bg-white p-5 shadow-sm">

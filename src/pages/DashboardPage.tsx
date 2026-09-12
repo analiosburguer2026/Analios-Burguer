@@ -124,29 +124,6 @@ export function DashboardPage() {
               <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${stat.color}`}>
                 <stat.icon size={22} />
               </div>
-
-              <Card>
-                <CardHeader className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h2 className="font-semibold text-brand-black">Operação da loja</h2>
-                    <p className="text-xs text-black/50">Acompanhe mesas e caixa diretamente no painel de gestão.</p>
-                  </div>
-                  <Link to="/gestao/operacao">
-                    <Button variant="outline">Abrir operação</Button>
-                  </Link>
-                </CardHeader>
-                <CardBody className="grid gap-3 sm:grid-cols-3">
-                  <div className="flex items-center gap-3 rounded-xl bg-brand-orange/10 p-4">
-                    <UsersRound className="text-brand-orange" size={22} />
-                    <div><p className="text-xs text-black/50">Mesas ocupadas</p><p className="font-semibold">{tables.filter((table) => table.status === "occupied").length}/{tables.length}</p></div>
-                  </div>
-                  <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4">
-                    <Banknote className="text-green-700" size={22} />
-                    <div><p className="text-xs text-black/50">Caixa hoje</p><p className="font-semibold">{formatCurrency(todayCashBalance)}</p></div>
-                  </div>
-                  <div className="rounded-xl bg-black/[0.03] p-4"><p className="text-xs text-black/50">Status do caixa</p><p className={`font-semibold ${cashOpen ? "text-green-700" : "text-red-600"}`}>{cashOpen ? "Aberto" : "Fechado"}</p></div>
-                </CardBody>
-              </Card>
               <div>
                 <p className="text-xs text-black/50">{stat.label}</p>
                 <p className="font-display text-xl text-brand-black">{stat.value}</p>
@@ -155,6 +132,21 @@ export function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      <Card>
+        <CardHeader className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-semibold text-brand-black">Operação da loja</h2>
+            <p className="text-xs text-black/50">Acompanhe mesas e caixa diretamente no painel de gestão.</p>
+          </div>
+          <Link to="/gestao/operacao"><Button variant="outline">Abrir operação</Button></Link>
+        </CardHeader>
+        <CardBody className="grid gap-3 sm:grid-cols-3">
+          <div className="flex items-center gap-3 rounded-xl bg-brand-orange/10 p-4"><UsersRound className="text-brand-orange" size={22} /><div><p className="text-xs text-black/50">Mesas ocupadas</p><p className="font-semibold">{tables.filter((table) => table.status === "occupied").length}/{tables.length}</p></div></div>
+          <div className="flex items-center gap-3 rounded-xl bg-green-50 p-4"><Banknote className="text-green-700" size={22} /><div><p className="text-xs text-black/50">Caixa hoje</p><p className="font-semibold">{formatCurrency(todayCashBalance)}</p></div></div>
+          <div className="rounded-xl bg-black/[0.03] p-4"><p className="text-xs text-black/50">Status do caixa</p><p className={`font-semibold ${cashOpen ? "text-green-700" : "text-red-600"}`}>{cashOpen ? "Aberto" : "Fechado"}</p></div>
+        </CardBody>
+      </Card>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
