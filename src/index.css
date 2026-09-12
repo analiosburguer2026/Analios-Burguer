@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  /* Identidade visual Analio's Burguer */
+  --color-brand-orange: #bc3a08;
+  --color-brand-orange-light: #d8480f;
+  --color-brand-cream: #fed289;
+  --color-brand-wine: #941b0c;
+  --color-brand-black: #0d0a08;
+  --color-brand-white: #ffffff;
+
+  --font-display: "Francois One", "Montserrat", sans-serif;
+  --font-sans: "Montserrat", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: #fbf6ee;
+  color: var(--color-brand-black);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.03em;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #f1e6d3;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-brand-orange);
+  border-radius: 8px;
+}
