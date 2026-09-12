@@ -8,7 +8,7 @@ import { useCustomerStore } from "../../store/customerStore";
 import { formatCurrency, buildWhatsAppLink } from "../../lib/utils";
 import logoOriginal from "../../assets/logos/logo-original.png";
 import { useOrderStore } from "../../store/orderStore";
-import type { Address, OrderType, PaymentMethod } from "../../types";
+import type { Address, OrderType, PaymentMethod, ProductAddon } from "../../types";
 import { supabase } from "../../lib/supabase";
 
 interface CartLine {
@@ -16,6 +16,7 @@ interface CartLine {
   name: string;
   price: number;
   quantity: number;
+  addons?: ProductAddon[];
 }
 
 export function PublicMenuPage() {
@@ -42,6 +43,8 @@ export function PublicMenuPage() {
   });
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [addonProduct, setAddonProduct] = useState<{ id: string; name: string; price: number; addons: ProductAddon[] } | null>(null);
+  const [selectedAddons, setSelectedAddons] = useState<ProductAddon[]>([]);
   const validPromotions = promotions.filter(isPromotionCurrentlyValid);
   const headerAnnouncement =
     settings.announcementText?.trim() ||
@@ -94,13 +97,14 @@ export function PublicMenuPage() {
     return price;
   }
 
-  function addToCart(productId: string, name: string, price: number) {
+  function addToCart(productId: string, name: string, price: number, addons: ProductAddon[] = []) {
+    const linePrice = price + addons.reduce((sum, addon) => sum + addon.price, 0);
     setCart((c) => {
-      const existing = c.find((l) => l.productId === productId);
+      const existing = c.find((l) => l.productId === productId && JSON.stringify(l.addons ?? []) === JSON.stringify(addons));
       if (existing) {
-        return c.map((l) => (l.productId === productId ? { ...l, quantity: l.quantity + 1 } : l));
+        return c.map((l) => (l === existing ? { ...l, quantity: l.quantity + 1 } : l));
       }
-      return [...c, { productId, name, price, quantity: 1 }];
+      return [...c, { productId, name, price: linePrice, quantity: 1, addons }];
     });
   }
 
@@ -158,6 +162,7 @@ export function PublicMenuPage() {
         productName: line.name,
         quantity: line.quantity,
         unitPrice: line.price,
+        addons: line.addons,
       })),
       type: orderType,
       address: orderType === "delivery" ? address : undefined,
@@ -220,6 +225,27 @@ export function PublicMenuPage() {
         {headerAnnouncement && (
           <div className={`flex items-center justify-center gap-2 px-4 py-3 text-center text-sm font-bold ${settings.announcementTone === "orange" ? "bg-brand-orange" : "bg-red-600"}`}>
             <Megaphone size={18} /> {headerAnnouncement}
+          </div>
+        )}
+        {addonProduct && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-display text-xl">Adicionais para {addonProduct.name}</h2>
+                <button type="button" onClick={() => setAddonProduct(null)} aria-label="Fechar"><X size={20} /></button>
+              </div>
+              <div className="space-y-2">
+                {addonProduct.addons.map((addon) => (
+                  <label key={addon.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
+                    <span><input type="checkbox" className="mr-2" checked={selectedAddons.some((item) => item.id === addon.id)} onChange={(event) => setSelectedAddons((items) => event.target.checked ? [...items, addon] : items.filter((item) => item.id !== addon.id))} />{addon.name}</span>
+                    <strong>{formatCurrency(addon.price)}</strong>
+                  </label>
+                ))}
+              </div>
+              <button type="button" className="mt-5 w-full rounded-lg bg-brand-orange px-4 py-3 font-semibold text-white" onClick={() => { addToCart(addonProduct.id, addonProduct.name, addonProduct.price, selectedAddons); setAddonProduct(null); }}>
+                Adicionar ao carrinho
+              </button>
+            </div>
           </div>
         )}
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 px-4 py-10 text-center">
@@ -341,7 +367,14 @@ export function PublicMenuPage() {
                             )}
                           </div>
                           <button
-                            onClick={() => addToCart(product.id, product.name, finalPrice)}
+                            onClick={() => {
+                              if (product.addons?.length) {
+                                setAddonProduct({ id: product.id, name: product.name, price: finalPrice, addons: product.addons });
+                                setSelectedAddons([]);
+                              } else {
+                                addToCart(product.id, product.name, finalPrice);
+                              }
+                            }}
                             className="rounded-lg bg-brand-orange px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-orange-light"
                           >
                             Adicionar
@@ -363,10 +396,10 @@ export function PublicMenuPage() {
             <div className="flex flex-wrap gap-2 max-w-md">
               {cart.map((l) => (
                 <span
-                  key={l.productId}
+                  key={`${l.productId}-${JSON.stringify(l.addons ?? [])}`}
                   className="flex items-center gap-2 rounded-full bg-brand-cream/60 px-3 py-1 text-xs"
                 >
-                  {l.quantity}x {l.name}
+                  {l.quantity}x {l.name}{l.addons?.length ? ` + ${l.addons.map((addon) => addon.name).join(", ")}` : ""}
                   <button
                     onClick={() => removeFromCart(l.productId)}
                     className="font-bold text-brand-orange"
@@ -409,6 +442,36 @@ export function PublicMenuPage() {
             </div>
             {orderType === "delivery" && (
               <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2 flex flex-wrap items-center gap-2">
+                  <input
+                    inputMode="numeric"
+                    placeholder="CEP"
+                    className="w-36 rounded-lg border border-black/10 px-3 py-2 text-sm"
+                    value={address.postalCode ?? ""}
+                    onChange={async (event) => {
+                      const postalCode = event.target.value.replace(/\D/g, "").slice(0, 8);
+                      setAddress((current) => ({ ...current, postalCode }));
+                      if (postalCode.length !== 8) return;
+                      try {
+                        const response = await fetch(`https://viacep.com.br/ws/${postalCode}/json/`);
+                        if (!response.ok) return;
+                        const data = await response.json();
+                        if (!data.erro) {
+                          setAddress((current) => ({
+                            ...current,
+                            postalCode,
+                            street: data.logradouro || current.street,
+                            neighborhood: data.bairro || current.neighborhood,
+                            city: data.localidade || current.city,
+                          }));
+                        }
+                      } catch {
+                        // Manual address entry remains available when CEP lookup is unavailable.
+                      }
+                    }}
+                  />
+                  <span className="text-xs text-black/50">Se não souber o CEP, preencha o endereço manualmente.</span>
+                </div>
                 {(["street", "number", "neighborhood", "city"] as const).map((field) => (
                   <input key={field} required placeholder={{ street: "Rua", number: "Número", neighborhood: "Bairro", city: "Cidade" }[field]}
                     className="rounded-lg border border-black/10 px-3 py-2 text-sm" value={address[field]}

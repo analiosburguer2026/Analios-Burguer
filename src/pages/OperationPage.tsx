@@ -20,6 +20,7 @@ export function OperationPage() {
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [selectedProductId, setSelectedProductId] = useState("");
   const [productQuantity, setProductQuantity] = useState("1");
+  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
   const [openingAmount, setOpeningAmount] = useState("0");
   const [entryAmount, setEntryAmount] = useState("");
   const [entryDescription, setEntryDescription] = useState("");
@@ -41,11 +42,13 @@ export function OperationPage() {
     const product = products.find((item) => item.id === selectedProductId);
     const quantity = Math.max(1, Number(productQuantity) || 1);
     if (!product) return;
-    const subtotal = product.basePrice * quantity;
+    const addons = (product.addons ?? []).filter((addon) => selectedAddonIds.includes(addon.id));
+    const unitPrice = product.basePrice + addons.reduce((sum, addon) => sum + addon.price, 0);
+    const subtotal = unitPrice * quantity;
     addOrder({
       customerName: selectedTable.customerName || "Cliente da mesa",
       customerPhone: "",
-      items: [{ id: crypto.randomUUID(), productId: product.id, productName: product.name, quantity, unitPrice: product.basePrice }],
+      items: [{ id: crypto.randomUUID(), productId: product.id, productName: product.name, quantity, unitPrice, addons }],
       type: "local",
       tableId: selectedTable.id,
       tableNumber: selectedTable.number,
@@ -60,6 +63,7 @@ export function OperationPage() {
     });
     setSelectedProductId("");
     setProductQuantity("1");
+    setSelectedAddonIds([]);
   }
 
   function handleCashEntry(event: FormEvent) {
@@ -127,6 +131,13 @@ export function OperationPage() {
                 {products.filter((product) => product.active).map((product) => <option key={product.id} value={product.id}>{product.name} - {formatCurrency(product.basePrice)}</option>)}
               </Select>
               <Input type="number" min="1" value={productQuantity} onChange={(event) => setProductQuantity(event.target.value)} />
+              {(products.find((product) => product.id === selectedProductId)?.addons ?? []).length > 0 && (
+                <div className="sm:col-span-3 flex flex-wrap gap-3 rounded-lg bg-black/5 p-3 text-sm">
+                  {(products.find((product) => product.id === selectedProductId)?.addons ?? []).map((addon) => (
+                    <label key={addon.id}><input type="checkbox" className="mr-1" checked={selectedAddonIds.includes(addon.id)} onChange={(event) => setSelectedAddonIds((ids) => event.target.checked ? [...ids, addon.id] : ids.filter((id) => id !== addon.id))} />{addon.name} (+{formatCurrency(addon.price)})</label>
+                  ))}
+                </div>
+              )}
               <Button type="submit">Lançar pedido</Button>
             </form>
             {tableOrders.length === 0 ? <p className="text-sm text-black/50">Nenhum item lançado nesta comanda.</p> : tableOrders.map((order) => <div key={order.id} className="flex justify-between border-b border-black/5 py-2 text-sm"><span>{order.code} · {order.items.map((item) => `${item.quantity}x ${item.productName}`).join(", ")}</span><strong>{formatCurrency(order.total)}</strong></div>)}

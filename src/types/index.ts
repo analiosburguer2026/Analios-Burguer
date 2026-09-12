@@ -14,6 +14,12 @@ export interface ProductSizeOption {
   price: number;
 }
 
+export interface ProductAddon {
+  id: ID;
+  name: string;
+  price: number;
+}
+
 export interface Product {
   id: ID;
   name: string;
@@ -22,6 +28,7 @@ export interface Product {
   imageUrl?: string; // base64 ou url
   basePrice: number;
   sizes?: ProductSizeOption[]; // opcional, se tiver variação de tamanho/preço
+  addons?: ProductAddon[];
   active: boolean;
   featured?: boolean;
   costPrice?: number; // custo de produção, para margem
@@ -45,6 +52,7 @@ export interface Promotion {
 }
 
 export interface Address {
+  postalCode?: string;
   street: string;
   number: string;
   complement?: string;
@@ -109,6 +117,7 @@ export interface OrderItem {
   sizeLabel?: string;
   quantity: number;
   unitPrice: number;
+  addons?: ProductAddon[];
   notes?: string;
 }
 

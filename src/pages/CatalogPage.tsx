@@ -18,6 +18,8 @@ const emptyForm = {
   imageUrl: "",
   active: true,
   featured: false,
+  addonsEnabled: false,
+  addonsText: "",
 };
 
 export function CatalogPage() {
@@ -59,6 +61,8 @@ export function CatalogPage() {
       imageUrl: product.imageUrl ?? "",
       active: product.active,
       featured: !!product.featured,
+      addonsEnabled: Boolean(product.addons?.length),
+      addonsText: (product.addons ?? []).map((addon) => `${addon.name}|${addon.price}`).join("\n"),
     });
     setModalOpen(true);
   }
@@ -106,6 +110,12 @@ export function CatalogPage() {
       imageUrl: form.imageUrl || undefined,
       active: form.active,
       featured: form.featured,
+      addons: form.addonsEnabled
+        ? form.addonsText.split("\n").map((line, index) => {
+            const [name, price] = line.split("|");
+            return { id: `addon-${index}-${name.trim()}`, name: name.trim(), price: Number((price ?? "").replace(",", ".")) || 0 };
+          }).filter((addon) => addon.name)
+        : [],
     };
 
     if (editingId) {
@@ -329,6 +339,13 @@ export function CatalogPage() {
               Destaque
             </label>
           </div>
+          <Field label="Adicionais" hint="Ative e informe um por linha no formato: Bacon extra|5,00">
+            <label className="mb-2 flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={form.addonsEnabled} onChange={(e) => setForm((f) => ({ ...f, addonsEnabled: e.target.checked }))} />
+              Este produto aceita adicionais
+            </label>
+            {form.addonsEnabled && <Textarea rows={4} value={form.addonsText} onChange={(e) => setForm((f) => ({ ...f, addonsText: e.target.value }))} placeholder={"Bacon extra|5,00\nQueijo|3,00"} />}
+          </Field>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>
               Cancelar
