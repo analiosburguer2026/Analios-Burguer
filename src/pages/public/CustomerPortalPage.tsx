@@ -8,6 +8,30 @@ import { formatCurrency, formatDateTime } from "../../lib/utils";
 import { supabase } from "../../lib/supabase";
 import type { Customer } from "../../types";
 
+function safeSessionGet(key: string) {
+  try {
+    return typeof window !== "undefined" ? window.sessionStorage.getItem(key) || "" : "";
+  } catch {
+    return "";
+  }
+}
+
+function safeSessionSet(key: string, value: string) {
+  try {
+    window.sessionStorage.setItem(key, value);
+  } catch {
+    // Safari private browsing can disable sessionStorage.
+  }
+}
+
+function safeSessionRemove(key: string) {
+  try {
+    window.sessionStorage.removeItem(key);
+  } catch {
+    // Safari private browsing can disable sessionStorage.
+  }
+}
+
 export function CustomerPortalPage() {
   const customers = useCustomerStore((state) => state.customers);
   const addCustomer = useCustomerStore((state) => state.addCustomer);
@@ -17,9 +41,7 @@ export function CustomerPortalPage() {
   const [name, setName] = useState("");
   const [sessionPhone, setSessionPhone] = useState("");
   const [remoteCustomer, setRemoteCustomer] = useState<Customer | null>(null);
-  const [sessionCustomerId, setSessionCustomerId] = useState(() =>
-    typeof window !== "undefined" ? sessionStorage.getItem("analios-customer-id") || "" : "",
-  );
+  const [sessionCustomerId, setSessionCustomerId] = useState(() => safeSessionGet("analios-customer-id"));
   const [registering, setRegistering] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,7 +62,7 @@ export function CustomerPortalPage() {
   const customerTotalSpent = Number(customer?.totalSpent ?? 0);
 
   useEffect(() => {
-    const savedPhone = sessionStorage.getItem("analios-customer-phone");
+    const savedPhone = safeSessionGet("analios-customer-phone");
     if (!savedPhone || remoteCustomer) return;
     supabase.rpc("find_customer_by_phone", { p_phone: savedPhone }).then(({ data }) => {
       if (!data) return;
@@ -66,8 +88,8 @@ export function CustomerPortalPage() {
       return;
     }
     removeCustomer(customer.id);
-    sessionStorage.removeItem("analios-customer-id");
-    sessionStorage.removeItem("analios-customer-phone");
+    safeSessionRemove("analios-customer-id");
+    safeSessionRemove("analios-customer-phone");
     setSessionPhone("");
     setSessionCustomerId("");
     setRemoteCustomer(null);
@@ -79,7 +101,7 @@ export function CustomerPortalPage() {
     setError("");
     const normalized = phone.replace(/\D/g, "");
     setLoading(true);
-    const localCustomer = customers.find((item) => item.phone.replace(/\D/g, "") === normalized);
+    const localCustomer = customers.find((item) => String(item.phone ?? "").replace(/\D/g, "") === normalized);
     const { data: remoteCustomer, error: lookupError } = await supabase.rpc("find_customer_by_phone", {
       p_phone: phone,
     });
@@ -88,7 +110,7 @@ export function CustomerPortalPage() {
       setError("Não foi possível consultar seu cadastro. Tente novamente.");
       return;
     }
-    const found = localCustomer ?? remoteCustomer;
+    const found = localCustomer ?? (remoteCustomer && typeof remoteCustomer === "object" ? remoteCustomer as Customer : null);
     if (!found) {
       setError("Telefone não encontrado. Faça seu cadastro abaixo.");
       setRegistering(true);
@@ -102,8 +124,8 @@ export function CustomerPortalPage() {
     setSessionPhone(found.phone);
     setSessionCustomerId(found.id);
     setRemoteCustomer(found);
-    sessionStorage.setItem("analios-customer-id", found.id);
-    sessionStorage.setItem("analios-customer-phone", found.phone);
+    safeSessionSet("analios-customer-id", found.id);
+    safeSessionSet("analios-customer-phone", found.phone);
   }
 
   async function registerAccount(event: React.FormEvent) {
@@ -124,8 +146,8 @@ export function CustomerPortalPage() {
     setSessionPhone(created.phone);
     setSessionCustomerId(created.id);
     setRemoteCustomer(created);
-    sessionStorage.setItem("analios-customer-id", created.id);
-    sessionStorage.setItem("analios-customer-phone", created.phone);
+    safeSessionSet("analios-customer-id", created.id);
+    safeSessionSet("analios-customer-phone", created.phone);
     setError("");
   }
 
@@ -143,8 +165,8 @@ export function CustomerPortalPage() {
                 setSessionPhone("");
                 setSessionCustomerId("");
                 setRemoteCustomer(null);
-                sessionStorage.removeItem("analios-customer-id");
-                sessionStorage.removeItem("analios-customer-phone");
+                safeSessionRemove("analios-customer-id");
+                safeSessionRemove("analios-customer-phone");
               }}
               className="flex items-center gap-1 text-sm text-black/50"
             >

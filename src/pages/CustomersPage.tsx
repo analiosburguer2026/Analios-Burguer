@@ -5,8 +5,9 @@ import { Button } from "../components/ui/Button";
 import { Modal } from "../components/ui/Modal";
 import { Field, Input, Textarea } from "../components/ui/Form";
 import { useCustomerStore } from "../store/customerStore";
-import { formatCurrency, buildWhatsAppLink } from "../lib/utils";
+import { formatCurrency, formatDateTime, buildWhatsAppLink } from "../lib/utils";
 import type { Customer } from "../types";
+import { useOrderStore } from "../store/orderStore";
 
 const emptyForm = {
   name: "",
@@ -24,6 +25,8 @@ const emptyForm = {
 
 export function CustomersPage() {
   const { customers, addCustomer, updateCustomer, removeCustomer } = useCustomerStore();
+  const { orders, removeOrder } = useOrderStore();
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -34,6 +37,8 @@ export function CustomersPage() {
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.phone.includes(search),
   );
+  const selectedCustomer = customers.find((customer) => customer.id === selectedCustomerId);
+  const selectedOrders = orders.filter((order) => order.customerId === selectedCustomerId);
 
   function openNew() {
     setEditingId(null);
@@ -121,7 +126,7 @@ export function CustomersPage() {
             </thead>
             <tbody>
               {filtered.map((c) => (
-                <tr key={c.id} className="border-b border-black/5">
+                <tr key={c.id} onClick={() => setSelectedCustomerId(c.id)} className="cursor-pointer border-b border-black/5 hover:bg-brand-orange/5">
                   <td className="p-4 font-medium">{c.name}</td>
                   <td className="p-4 text-black/50">{c.phone}</td>
                   <td className="p-4">
@@ -169,6 +174,26 @@ export function CustomersPage() {
           </table>
         </CardBody>
       </Card>
+
+      {selectedCustomer && (
+        <Card>
+          <CardBody>
+            <div className="mb-4 flex items-center justify-between">
+              <div><h2 className="font-semibold">Pedidos de {selectedCustomer.name}</h2><p className="text-xs text-black/50">{selectedOrders.length} pedido(s) encontrado(s)</p></div>
+              <Button size="sm" variant="ghost" onClick={() => setSelectedCustomerId(null)}>Fechar</Button>
+            </div>
+            <div className="space-y-2">
+              {selectedOrders.map((order) => (
+                <div key={order.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-black/5 p-3 text-sm">
+                  <div><p className="font-semibold">{order.code} · {formatCurrency(order.total)}</p><p className="text-xs text-black/50">{formatDateTime(order.createdAt)} · {order.status}</p></div>
+                  <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Excluir o pedido ${order.code}? Use apenas para pedidos de teste.`)) removeOrder(order.id); }}><Trash2 size={14} className="text-red-500" /> Excluir teste</Button>
+                </div>
+              ))}
+              {selectedOrders.length === 0 && <p className="text-sm text-black/50">Nenhum pedido vinculado.</p>}
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       <Modal
         open={modalOpen}
