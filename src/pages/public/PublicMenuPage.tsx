@@ -282,7 +282,7 @@ export function PublicMenuPage() {
                   if (!options.length) return null;
                   return <div key={kind}><p className="mb-2 text-sm font-bold text-brand-orange">{kind === "addon" ? "Adicionais" : "Retirar ingredientes"}</p><div className="space-y-2">{options.map((addon) => (
                   <label key={addon.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
-                    <span><input type="checkbox" className="mr-2 accent-brand-orange" checked={selectedAddons.some((item) => item.id === addon.id)} onChange={(event) => setSelectedAddons((items) => event.target.checked ? [...items, addon] : items.filter((item) => item.id !== addon.id))} />{kind === "removal" ? `Retirar ${addon.name}` : addon.name}</span>
+                    <span className="text-black"><input type="checkbox" className="mr-2 accent-brand-orange" checked={selectedAddons.some((item) => item.id === addon.id)} onChange={(event) => setSelectedAddons((items) => event.target.checked ? [...items, addon] : items.filter((item) => item.id !== addon.id))} />{kind === "removal" ? `Retirar ${addon.name}` : addon.name}</span>
                     <strong>{kind === "removal" ? "Sem custo" : `+ ${formatCurrency(addon.price)}`}</strong>
                   </label>
                   ))}</div></div>;

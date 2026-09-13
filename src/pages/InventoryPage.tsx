@@ -32,7 +32,7 @@ export function InventoryPage() {
       <Input type="number" min="0" step="0.01" placeholder="Mínimo" value={minimumQuantity} onChange={(e) => setMinimumQuantity(e.target.value)} />
       <Button type="submit"><Plus size={16} /> Adicionar</Button>
     </form></CardBody></Card>
-    <Card><CardHeader><h2 className="flex items-center gap-2 font-semibold"><Package size={18} /> Insumos cadastrados</h2></CardHeader><CardBody><div className="space-y-3">
+    <Card><CardHeader><h2 className="flex items-center gap-2 font-semibold"><Package size={18} /> Insumos cadastrados</h2></CardHeader><CardBody><div className="mb-2 grid grid-cols-[1fr_120px_120px_120px_auto] gap-3 px-3 text-xs font-bold uppercase text-black/50"><span>Item / status</span><span>Quantidade atual</span><span>Estoque mínimo</span><span>Custo unitário</span><span>Ações</span></div><div className="space-y-3">
       {items.map((item) => {
         const low = item.quantity <= item.minimumQuantity;
         return <div key={item.id} className={`grid items-center gap-3 rounded-xl border p-3 md:grid-cols-[1fr_120px_120px_120px_auto] ${low ? "border-red-400 bg-red-50" : "border-black/10"}`}>

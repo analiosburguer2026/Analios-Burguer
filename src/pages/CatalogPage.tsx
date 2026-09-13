@@ -22,6 +22,8 @@ const emptyForm = {
   addonsText: "",
 };
 
+type AddonRow = { name: string; price: string; kind: "addon" | "removal" };
+
 export function CatalogPage() {
   const { categories, products, addProduct, updateProduct, removeProduct, toggleProductActive, addCategory, updateCategory, removeCategory } =
     useCatalogStore();
@@ -31,6 +33,7 @@ export function CatalogPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [addonRows, setAddonRows] = useState<AddonRow[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
@@ -47,6 +50,7 @@ export function CatalogPage() {
   function openNewProduct() {
     setEditingId(null);
     setForm({ ...emptyForm, categoryId: categories[0]?.id ?? "" });
+    setAddonRows([]);
     setModalOpen(true);
   }
 
@@ -64,6 +68,7 @@ export function CatalogPage() {
       addonsEnabled: Boolean(product.addons?.length),
       addonsText: (product.addons ?? []).map((addon) => `${addon.name}|${addon.price}`).join("\n"),
     });
+    setAddonRows((product.addons ?? []).map((addon) => ({ name: addon.name, price: String(addon.price), kind: addon.kind ?? "addon" })));
     setModalOpen(true);
   }
 
@@ -111,12 +116,12 @@ export function CatalogPage() {
       active: form.active,
       featured: form.featured,
       addons: form.addonsEnabled
-        ? form.addonsText.split("\n").map((line, index): ProductAddon => {
-            const [rawName, price] = line.split("|");
-            const removal = rawName.trim().startsWith("-");
-            const name = removal ? rawName.trim().slice(1).trim() : rawName.trim();
-            return { id: `addon-${index}-${name}`, name, price: removal ? 0 : Number((price ?? "").replace(",", ".")) || 0, kind: removal ? "removal" : "addon" };
-          }).filter((addon) => addon.name)
+        ? addonRows.filter((row) => row.name.trim()).map((row, index): ProductAddon => ({
+            id: `addon-${index}-${row.name.trim()}`,
+            name: row.name.trim(),
+            price: row.kind === "removal" ? 0 : Number(row.price.replace(",", ".")) || 0,
+            kind: row.kind,
+          }))
         : [],
     };
 
@@ -341,12 +346,20 @@ export function CatalogPage() {
               Destaque
             </label>
           </div>
-          <Field label="Adicionais" hint="Ative e informe um por linha no formato: Bacon extra|5,00">
+          <Field label="Adicionais" hint="Cadastre cada opção na tabela. Use 'Retirar ingrediente' para remoções sem custo.">
             <label className="mb-2 flex items-center gap-2 text-sm">
               <input type="checkbox" checked={form.addonsEnabled} onChange={(e) => setForm((f) => ({ ...f, addonsEnabled: e.target.checked }))} />
               Este produto aceita adicionais
             </label>
-            {form.addonsEnabled && <Textarea rows={4} value={form.addonsText} onChange={(e) => setForm((f) => ({ ...f, addonsText: e.target.value }))} placeholder={"Bacon extra|5,00\nQueijo|3,00"} />}
+            {form.addonsEnabled && <div className="overflow-hidden rounded-lg border border-black/10">
+              <div className="grid grid-cols-[1fr_130px_90px] bg-brand-black px-3 py-2 text-xs font-bold text-white"><span>Nome do item</span><span>Valor do adicional</span><span>Tipo</span></div>
+              {addonRows.map((row, index) => <div key={index} className="grid grid-cols-[1fr_130px_90px] items-center gap-2 border-t border-black/10 p-2">
+                <Input placeholder="Ex.: Bacon extra" value={row.name} onChange={(e) => setAddonRows((rows) => rows.map((item, itemIndex) => itemIndex === index ? { ...item, name: e.target.value } : item))} />
+                <Input type="number" min="0" step="0.01" placeholder="R$ 0,00" disabled={row.kind === "removal"} value={row.price} onChange={(e) => setAddonRows((rows) => rows.map((item, itemIndex) => itemIndex === index ? { ...item, price: e.target.value } : item))} />
+                <Select value={row.kind} onChange={(e) => setAddonRows((rows) => rows.map((item, itemIndex) => itemIndex === index ? { ...item, kind: e.target.value as AddonRow["kind"] } : item))}><option value="addon">Adicionar</option><option value="removal">Retirar</option></Select>
+              </div>)}
+              <button type="button" className="w-full border-t border-black/10 px-3 py-2 text-left text-sm font-semibold text-brand-orange" onClick={() => setAddonRows((rows) => [...rows, { name: "", price: "0", kind: "addon" }])}>+ Adicionar linha</button>
+            </div>}
           </Field>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>
