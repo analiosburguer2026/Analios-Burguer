@@ -16,6 +16,7 @@ type PaymentRequest = {
   items: PaymentItem[];
   total: number;
   payerEmail?: string;
+  notificationUrl?: string;
 };
 
 serve(async (request) => {
@@ -63,6 +64,7 @@ serve(async (request) => {
         failure: `${origin}/pedido-confirmado?status=failure&pedido=${encodeURIComponent(body.orderId)}`,
       },
       auto_return: "approved",
+      notification_url: body.notificationUrl,
     }),
   });
 

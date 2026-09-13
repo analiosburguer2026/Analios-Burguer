@@ -109,6 +109,7 @@ export type OrderStatus =
 export type OrderType = "delivery" | "pickup" | "local";
 
 export type PaymentMethod = "cash" | "credit" | "debit" | "pix";
+export type PaymentStatus = "pending" | "approved" | "in_process" | "rejected" | "cancelled" | "refunded";
 
 export interface OrderItem {
   id: ID;
@@ -135,6 +136,8 @@ export interface Order {
   motoboyId?: ID;
   status: OrderStatus;
   paymentMethod: PaymentMethod;
+  paymentStatus?: PaymentStatus;
+  paymentId?: string;
   subtotal: number;
   discount: number;
   deliveryFee: number;

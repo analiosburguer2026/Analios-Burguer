@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { v4 as uuid } from "uuid";
-import type { Order, OrderStatus } from "../types";
+import type { Order, OrderStatus, PaymentStatus } from "../types";
 import { generateOrderCode } from "../lib/utils";
 
 interface OrderState {
@@ -10,6 +10,7 @@ interface OrderState {
 
   addOrder: (order: Omit<Order, "id" | "code" | "createdAt" | "updatedAt">) => Order;
   updateOrderStatus: (id: string, status: OrderStatus) => void;
+  updatePayment: (code: string, paymentStatus: PaymentStatus, paymentId?: string) => void;
   assignMotoboy: (id: string, motoboyId: string) => void;
   updateTracking: (
     id: string,
@@ -46,6 +47,15 @@ export const useOrderStore = create<OrderState>()(
             o.id === id
               ? { ...o, status, updatedAt: new Date().toISOString() }
               : o,
+          ),
+        })),
+
+      updatePayment: (code, paymentStatus, paymentId) =>
+        set((state) => ({
+          orders: state.orders.map((order) =>
+            order.code === code
+              ? { ...order, paymentStatus, paymentId, updatedAt: new Date().toISOString() }
+              : order,
           ),
         })),
 

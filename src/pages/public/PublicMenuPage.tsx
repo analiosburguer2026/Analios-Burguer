@@ -208,6 +208,7 @@ export function PublicMenuPage() {
       address: orderType === "delivery" ? address : undefined,
       status: "pending",
       paymentMethod,
+      paymentStatus: paymentMethod === "cash" ? "pending" : "pending",
       subtotal: total,
       discount: 0,
       deliveryFee,
@@ -238,6 +239,7 @@ export function PublicMenuPage() {
             })),
             total: orderTotal,
             payerEmail: customer.email,
+            notificationUrl: `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/payment-webhook`,
           },
         })
         .then(({ data, error }) => {
