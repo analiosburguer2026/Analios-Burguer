@@ -3,6 +3,8 @@ import { persist } from "zustand/middleware";
 import { v4 as uuid } from "uuid";
 import type { Order, OrderStatus, PaymentStatus } from "../types";
 import { generateOrderCode } from "../lib/utils";
+import { useCatalogStore } from "./catalogStore";
+import { useInventoryStore } from "./inventoryStore";
 
 interface OrderState {
   orders: Order[];
@@ -41,14 +43,25 @@ export const useOrderStore = create<OrderState>()(
         return newOrder;
       },
 
-      updateOrderStatus: (id, status) =>
+      updateOrderStatus: (id, status) => {
+        const current = get().orders.find((order) => order.id === id);
+        if (current && current.status !== "preparing" && status === "preparing") {
+          const products = useCatalogStore.getState().products;
+          for (const item of current.items) {
+            const product = products.find((entry) => entry.id === item.productId);
+            for (const ingredient of product?.ingredients ?? []) {
+              useInventoryStore.getState().moveStock(ingredient.inventoryItemId, "exit", ingredient.quantity * item.quantity, `Pedido ${current.code}`);
+            }
+          }
+        }
         set((state) => ({
           orders: state.orders.map((o) =>
             o.id === id
               ? { ...o, status, updatedAt: new Date().toISOString() }
               : o,
           ),
-        })),
+        }));
+      },
 
       updatePayment: (code, paymentStatus, paymentId) =>
         set((state) => ({

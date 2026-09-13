@@ -7,7 +7,8 @@ import { Modal } from "../components/ui/Modal";
 import { Field, Input, Select, Textarea } from "../components/ui/Form";
 import { useCatalogStore } from "../store/catalogStore";
 import { formatCurrency } from "../lib/utils";
-import type { Product, ProductAddon } from "../types";
+import type { Product, ProductAddon, ProductIngredient } from "../types";
+import { useInventoryStore } from "../store/inventoryStore";
 
 const emptyForm = {
   name: "",
@@ -23,6 +24,7 @@ const emptyForm = {
 };
 
 type AddonRow = { name: string; price: string; kind: "addon" | "removal" };
+type IngredientRow = ProductIngredient;
 
 export function CatalogPage() {
   const { categories, products, addProduct, updateProduct, removeProduct, toggleProductActive, addCategory, updateCategory, removeCategory } =
@@ -34,6 +36,8 @@ export function CatalogPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [addonRows, setAddonRows] = useState<AddonRow[]>([]);
+  const inventoryItems = useInventoryStore((state) => state.items);
+  const [ingredientRows, setIngredientRows] = useState<IngredientRow[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [categoryModalOpen, setCategoryModalOpen] = useState(false);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
@@ -51,6 +55,7 @@ export function CatalogPage() {
     setEditingId(null);
     setForm({ ...emptyForm, categoryId: categories[0]?.id ?? "" });
     setAddonRows([]);
+    setIngredientRows([]);
     setModalOpen(true);
   }
 
@@ -69,6 +74,7 @@ export function CatalogPage() {
       addonsText: (product.addons ?? []).map((addon) => `${addon.name}|${addon.price}`).join("\n"),
     });
     setAddonRows((product.addons ?? []).map((addon) => ({ name: addon.name, price: String(addon.price), kind: addon.kind ?? "addon" })));
+    setIngredientRows(product.ingredients ?? []);
     setModalOpen(true);
   }
 
@@ -123,6 +129,7 @@ export function CatalogPage() {
             kind: row.kind,
           }))
         : [],
+      ingredients: ingredientRows.filter((row) => row.inventoryItemId && row.quantity > 0),
     };
 
     if (editingId) {
@@ -242,6 +249,16 @@ export function CatalogPage() {
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             />
+          </Field>
+          <Field label="Ficha técnica" hint="Informe quanto de cada insumo é consumido por unidade deste produto.">
+            <div className="overflow-hidden rounded-lg border border-black/10">
+              <div className="grid grid-cols-[1fr_130px] bg-brand-black px-3 py-2 text-xs font-bold text-white"><span>Insumo</span><span>Quantidade por unidade</span></div>
+              {ingredientRows.map((row, index) => <div key={index} className="grid grid-cols-[1fr_130px] gap-2 border-t border-black/10 p-2">
+                <Select value={row.inventoryItemId} onChange={(e) => setIngredientRows((rows) => rows.map((item, itemIndex) => itemIndex === index ? { ...item, inventoryItemId: e.target.value } : item))}><option value="">Selecione um insumo</option>{inventoryItems.map((item) => <option key={item.id} value={item.id}>{item.name} ({item.unit})</option>)}</Select>
+                <Input type="number" min="0" step="0.001" value={row.quantity} onChange={(e) => setIngredientRows((rows) => rows.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Number(e.target.value) || 0 } : item))} />
+              </div>)}
+              <button type="button" className="w-full border-t border-black/10 px-3 py-2 text-left text-sm font-semibold text-brand-orange" onClick={() => setIngredientRows((rows) => [...rows, { inventoryItemId: "", quantity: 0 }])}>+ Adicionar insumo</button>
+            </div>
           </Field>
           <Field label="Descrição">
             <Textarea

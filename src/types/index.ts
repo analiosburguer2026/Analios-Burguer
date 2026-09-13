@@ -21,6 +21,11 @@ export interface ProductAddon {
   kind?: "addon" | "removal";
 }
 
+export interface ProductIngredient {
+  inventoryItemId: ID;
+  quantity: number;
+}
+
 export interface Product {
   id: ID;
   name: string;
@@ -30,6 +35,7 @@ export interface Product {
   basePrice: number;
   sizes?: ProductSizeOption[]; // opcional, se tiver variação de tamanho/preço
   addons?: ProductAddon[];
+  ingredients?: ProductIngredient[];
   active: boolean;
   featured?: boolean;
   costPrice?: number; // custo de produção, para margem
