@@ -129,7 +129,14 @@ export function CatalogPage() {
             kind: row.kind,
           }))
         : [],
-      ingredients: ingredientRows.filter((row) => row.inventoryItemId && row.quantity > 0),
+      ingredients: ingredientRows
+        .filter((row) => row.inventoryItemId && row.quantity > 0)
+        .map((row) => ({
+          ...row,
+          addonPrice: Number(row.addonPrice) || 0,
+          canRemove: Boolean(row.canRemove),
+          name: row.name || inventoryItems.find((item) => item.id === row.inventoryItemId)?.name,
+        })),
     };
 
     if (editingId) {

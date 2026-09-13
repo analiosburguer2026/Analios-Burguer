@@ -107,15 +107,19 @@ export function PublicMenuPage() {
       const name = ingredient.name?.trim();
       if (!name) return [];
       const options: ProductAddon[] = [];
-      if ((ingredient.addonPrice ?? 0) > 0) {
-        options.push({ id: `ingredient-add-${ingredient.inventoryItemId}`, name: `Extra ${name}`, price: ingredient.addonPrice ?? 0, kind: "addon" });
+      const addonPrice = Number(ingredient.addonPrice ?? 0);
+      if (addonPrice > 0) {
+        options.push({ id: `ingredient-add-${ingredient.inventoryItemId}`, name: `Extra ${name}`, price: addonPrice, kind: "addon" });
       }
       if (ingredient.canRemove && !protectedIngredient(name)) {
         options.push({ id: `ingredient-remove-${ingredient.inventoryItemId}`, name, price: 0, kind: "removal" });
       }
       return options;
     });
-    return [...(product.addons ?? []), ...ingredientAddons];
+    return [
+      ...(product.addons ?? []).map((addon) => ({ ...addon, price: Number(addon.price) || 0 })),
+      ...ingredientAddons,
+    ];
   }
 
   function addToCart(productId: string, name: string, price: number, addons: ProductAddon[] = []) {
@@ -300,7 +304,7 @@ export function PublicMenuPage() {
                   return <div key={kind}><p className="mb-2 text-sm font-bold text-brand-orange">{kind === "addon" ? "Adicionais" : "Retirar ingredientes"}</p><div className="space-y-2">{options.map((addon) => (
                   <label key={addon.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
                     <span className="text-black"><input type="checkbox" className="mr-2 accent-brand-orange" checked={selectedAddons.some((item) => item.id === addon.id)} onChange={(event) => setSelectedAddons((items) => event.target.checked ? [...items, addon] : items.filter((item) => item.id !== addon.id))} />{kind === "removal" ? `Retirar ${addon.name}` : addon.name}</span>
-                    <strong>{kind === "removal" ? "Sem custo" : `+ ${formatCurrency(addon.price)}`}</strong>
+                    <strong className="whitespace-nowrap text-brand-black">{kind === "removal" ? "Sem custo" : `+ ${formatCurrency(Number(addon.price) || 0)}`}</strong>
                   </label>
                   ))}</div></div>;
                 })}
