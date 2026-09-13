@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Package, Plus, Trash2 } from "lucide-react";
+import { Package, Plus, Trash2, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { Card, CardBody, CardHeader } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input, Select } from "../components/ui/Form";
 import { useInventoryStore } from "../store/inventoryStore";
 
 export function InventoryPage() {
-  const { items, addItem, updateItem, removeItem } = useInventoryStore();
+  const { items, addItem, updateItem, removeItem, moveStock } = useInventoryStore();
   const [name, setName] = useState("");
   const [unit, setUnit] = useState("un");
   const [quantity, setQuantity] = useState("0");
@@ -40,7 +40,11 @@ export function InventoryPage() {
           <Input type="number" min="0" step="0.01" value={item.quantity} onChange={(e) => updateItem(item.id, { quantity: Number(e.target.value) || 0 })} />
           <Input type="number" min="0" step="0.01" value={item.minimumQuantity} onChange={(e) => updateItem(item.id, { minimumQuantity: Number(e.target.value) || 0 })} />
           <Input type="number" min="0" step="0.01" value={item.costPerUnit} onChange={(e) => updateItem(item.id, { costPerUnit: Number(e.target.value) || 0 })} aria-label={`Custo de ${item.name}`} />
-          <button type="button" onClick={() => removeItem(item.id)} className="text-red-600" aria-label={`Excluir ${item.name}`}><Trash2 size={18} /></button>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => { const value = Number(window.prompt(`Quantidade de entrada para ${item.name}`)); if (value > 0) moveStock(item.id, "entry", value, "Entrada manual"); }} className="text-green-700" aria-label={`Entrada de ${item.name}`}><ArrowDownToLine size={18} /></button>
+            <button type="button" onClick={() => { const value = Number(window.prompt(`Quantidade de saída para ${item.name}`)); if (value > 0) moveStock(item.id, "exit", value, "Saída manual"); }} className="text-orange-700" aria-label={`Saída de ${item.name}`}><ArrowUpFromLine size={18} /></button>
+            <button type="button" onClick={() => removeItem(item.id)} className="text-red-600" aria-label={`Excluir ${item.name}`}><Trash2 size={18} /></button>
+          </div>
         </div>;
       })}
       {items.length === 0 && <p className="py-8 text-center text-sm text-black/50">Nenhum insumo cadastrado.</p>}

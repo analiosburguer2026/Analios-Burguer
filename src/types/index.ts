@@ -48,6 +48,15 @@ export interface InventoryItem {
   updatedAt: string;
 }
 
+export interface InventoryMovement {
+  id: ID;
+  itemId: ID;
+  type: "entry" | "exit" | "adjustment";
+  quantity: number;
+  reason: string;
+  createdAt: string;
+}
+
 export type PromotionType = "percentage" | "fixed" | "combo";
 
 export interface Promotion {

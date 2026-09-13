@@ -51,7 +51,7 @@ function getState(): AppStateData {
       cashOpeningAmount: useOperationStore.getState().cashOpeningAmount,
       cashEntries: useOperationStore.getState().cashEntries,
     },
-    inventory: { items: useInventoryStore.getState().items },
+    inventory: { items: useInventoryStore.getState().items, movements: useInventoryStore.getState().movements },
   };
 }
 
