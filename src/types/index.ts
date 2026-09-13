@@ -23,7 +23,10 @@ export interface ProductAddon {
 
 export interface ProductIngredient {
   inventoryItemId: ID;
+  name?: string;
   quantity: number;
+  addonPrice?: number;
+  canRemove?: boolean;
 }
 
 export interface Product {

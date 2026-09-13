@@ -252,10 +252,12 @@ export function CatalogPage() {
           </Field>
           <Field label="Ficha técnica" hint="Informe quanto de cada insumo é consumido por unidade deste produto.">
             <div className="overflow-hidden rounded-lg border border-black/10">
-              <div className="grid grid-cols-[1fr_130px] bg-brand-black px-3 py-2 text-xs font-bold text-white"><span>Insumo</span><span>Quantidade por unidade</span></div>
-              {ingredientRows.map((row, index) => <div key={index} className="grid grid-cols-[1fr_130px] gap-2 border-t border-black/10 p-2">
-                <Select value={row.inventoryItemId} onChange={(e) => setIngredientRows((rows) => rows.map((item, itemIndex) => itemIndex === index ? { ...item, inventoryItemId: e.target.value } : item))}><option value="">Selecione um insumo</option>{inventoryItems.map((item) => <option key={item.id} value={item.id}>{item.name} ({item.unit})</option>)}</Select>
+              <div className="grid grid-cols-[1fr_130px_130px_110px] bg-brand-black px-3 py-2 text-xs font-bold text-white"><span>Insumo</span><span>Quantidade por unidade</span><span>Valor adicional</span><span>Pode retirar?</span></div>
+              {ingredientRows.map((row, index) => <div key={index} className="grid grid-cols-[1fr_130px_130px_110px] items-center gap-2 border-t border-black/10 p-2">
+                <Select value={row.inventoryItemId} onChange={(e) => setIngredientRows((rows) => rows.map((item, itemIndex) => itemIndex === index ? { ...item, inventoryItemId: e.target.value, name: inventoryItems.find((entry) => entry.id === e.target.value)?.name } : item))}><option value="">Selecione um insumo</option>{inventoryItems.map((item) => <option key={item.id} value={item.id}>{item.name} ({item.unit})</option>)}</Select>
                 <Input type="number" min="0" step="0.001" value={row.quantity} onChange={(e) => setIngredientRows((rows) => rows.map((item, itemIndex) => itemIndex === index ? { ...item, quantity: Number(e.target.value) || 0 } : item))} />
+                <Input type="number" min="0" step="0.01" value={row.addonPrice ?? 0} onChange={(e) => setIngredientRows((rows) => rows.map((item, itemIndex) => itemIndex === index ? { ...item, addonPrice: Number(e.target.value) || 0 } : item))} />
+                <label className="flex items-center justify-center gap-1 text-xs"><input type="checkbox" checked={row.canRemove ?? false} onChange={(e) => setIngredientRows((rows) => rows.map((item, itemIndex) => itemIndex === index ? { ...item, canRemove: e.target.checked } : item))} /> Sim</label>
               </div>)}
               <button type="button" className="w-full border-t border-black/10 px-3 py-2 text-left text-sm font-semibold text-brand-orange" onClick={() => setIngredientRows((rows) => [...rows, { inventoryItemId: "", quantity: 0 }])}>+ Adicionar insumo</button>
             </div>

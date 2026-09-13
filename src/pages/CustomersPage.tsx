@@ -39,6 +39,10 @@ export function CustomersPage() {
   );
   const selectedCustomer = customers.find((customer) => customer.id === selectedCustomerId);
   const selectedOrders = orders.filter((order) => order.customerId === selectedCustomerId);
+  const customerStats = (customerId: string) => {
+    const customerOrders = orders.filter((order) => order.customerId === customerId && order.status !== "cancelled");
+    return { count: customerOrders.length, total: customerOrders.reduce((sum, order) => sum + order.total, 0) };
+  };
 
   function openNew() {
     setEditingId(null);
@@ -134,8 +138,8 @@ export function CustomersPage() {
                       <Award size={14} /> {c.loyaltyPoints}
                     </span>
                   </td>
-                  <td className="p-4">{formatCurrency(c.totalSpent)}</td>
-                  <td className="p-4">{c.ordersCount}</td>
+                  <td className="p-4">{formatCurrency(customerStats(c.id).total)}</td>
+                  <td className="p-4">{customerStats(c.id).count}</td>
                   <td className="p-4">
                     <div className="flex gap-2">
                       <a

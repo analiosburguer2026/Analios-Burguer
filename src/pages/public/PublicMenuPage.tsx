@@ -101,6 +101,23 @@ export function PublicMenuPage() {
     return price;
   }
 
+  function ingredientOptions(product: (typeof products)[number]): ProductAddon[] {
+    const protectedIngredient = (name: string) => /p[aã]o|burguer|hamb[uú]rguer/i.test(name);
+    const ingredientAddons = (product.ingredients ?? []).flatMap((ingredient) => {
+      const name = ingredient.name?.trim();
+      if (!name) return [];
+      const options: ProductAddon[] = [];
+      if ((ingredient.addonPrice ?? 0) > 0) {
+        options.push({ id: `ingredient-add-${ingredient.inventoryItemId}`, name: `Extra ${name}`, price: ingredient.addonPrice ?? 0, kind: "addon" });
+      }
+      if (ingredient.canRemove && !protectedIngredient(name)) {
+        options.push({ id: `ingredient-remove-${ingredient.inventoryItemId}`, name, price: 0, kind: "removal" });
+      }
+      return options;
+    });
+    return [...(product.addons ?? []), ...ingredientAddons];
+  }
+
   function addToCart(productId: string, name: string, price: number, addons: ProductAddon[] = []) {
     const linePrice = price + addons.reduce((sum, addon) => sum + (addon.kind === "removal" ? 0 : addon.price), 0);
     setCart((c) => {
@@ -419,8 +436,9 @@ export function PublicMenuPage() {
                           </div>
                           <button
                             onClick={() => {
-                              if (product.addons?.length) {
-                                setAddonProduct({ id: product.id, name: product.name, price: finalPrice, addons: product.addons });
+                              const options = ingredientOptions(product);
+                              if (options.length) {
+                                setAddonProduct({ id: product.id, name: product.name, price: finalPrice, addons: options });
                                 setSelectedAddons([]);
                               } else {
                                 addToCart(product.id, product.name, finalPrice);
