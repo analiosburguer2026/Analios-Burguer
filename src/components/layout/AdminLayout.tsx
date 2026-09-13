@@ -17,13 +17,18 @@ import {
   PanelLeftOpen,
   Bell,
   Volume2,
+  Moon,
+  Sun,
+  Package,
 } from "lucide-react";
 import logoSimbolo from "../../assets/logos/logo-simbolo.png";
 import { useOrderStore } from "../../store/orderStore";
+import { useSettingsStore } from "../../store/settingsStore";
 
 const navItems = [
   { to: "/gestao", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/gestao/operacao", label: "Operação", icon: Utensils },
+  { to: "/gestao/estoque", label: "Estoque", icon: Package },
   { to: "/gestao/pedidos", label: "Pedidos", icon: ClipboardList },
   { to: "/gestao/catalogo", label: "Catálogo", icon: UtensilsCrossed },
   { to: "/gestao/promocoes", label: "Promoções", icon: Tag },
@@ -37,6 +42,8 @@ const navItems = [
 
 export function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
+  const settings = useSettingsStore((state) => state.settings);
+  const updateSettings = useSettingsStore((state) => state.updateSettings);
   const [newOrderCodes, setNewOrderCodes] = useState<string[]>([]);
   const [notificationsEnabled, setNotificationsEnabled] = useState(
     typeof Notification !== "undefined" && Notification.permission === "granted",
@@ -75,6 +82,12 @@ export function AdminLayout() {
       if (!AudioContextClass) return;
       const context = audioContextRef.current ?? new AudioContextClass();
       audioContextRef.current = context;
+      if (settings.notificationSoundUrl) {
+        const audio = new Audio(settings.notificationSoundUrl);
+        audio.volume = 0.8;
+        void audio.play();
+        return;
+      }
       const oscillator = context.createOscillator();
       const gain = context.createGain();
       oscillator.frequency.value = 880;
@@ -92,7 +105,7 @@ export function AdminLayout() {
       window.clearInterval(soundTimer);
       document.title = previousTitle;
     };
-  }, [newOrderCodes.length]);
+  }, [newOrderCodes.length, settings.notificationSoundUrl]);
 
   async function enableNotifications() {
     if (typeof Notification === "undefined") return;
@@ -132,6 +145,11 @@ export function AdminLayout() {
           </button>
         </div>
 
+        <div className="flex items-center justify-end gap-2 px-3 pt-3">
+          <button type="button" onClick={() => updateSettings({ darkMode: !settings.darkMode })} className="rounded-lg border border-white/20 p-2 text-brand-cream" aria-label="Alternar tema">
+            {settings.darkMode ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+        </div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {navItems.map(({ to, label, icon: Icon, end }) => (
             <NavLink

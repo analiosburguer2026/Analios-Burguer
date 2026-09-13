@@ -128,6 +128,7 @@ export const seedSettings: StoreSettings = {
   freeDeliveryAbove: 60,
   serviceMode: "both",
   openingHours: "Ter a Dom - 18h às 23h30",
+  darkMode: false,
   loyalty: {
     enabled: true,
     pointsPerCurrency: 1,

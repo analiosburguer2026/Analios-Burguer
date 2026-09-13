@@ -31,6 +31,29 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+body.theme-dark {
+  background-color: #17110d;
+  color: #fff4df;
+}
+
+body.theme-dark .bg-white {
+  background-color: #241912 !important;
+}
+
+body.theme-dark .text-brand-black,
+body.theme-dark .text-black\/50,
+body.theme-dark .text-black\/40 {
+  color: #fff4df !important;
+}
+
+body.theme-dark input,
+body.theme-dark select,
+body.theme-dark textarea {
+  background-color: #2d2017;
+  color: #fff4df;
+  border-color: #6d412b;
+}
+
 .font-display {
   font-family: var(--font-display);
   letter-spacing: 0.03em;

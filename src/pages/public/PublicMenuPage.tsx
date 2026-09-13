@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { MessageCircle, MapPin, Clock, ShoppingBag, X, Search, SlidersHorizontal, Phone, Megaphone, LocateFixed, Plus, Minus } from "lucide-react";
+import { MessageCircle, MapPin, Clock, ShoppingBag, X, Search, SlidersHorizontal, Phone, Megaphone, LocateFixed, Plus, Minus, Moon, Sun } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCatalogStore } from "../../store/catalogStore";
 import { usePromotionStore, isPromotionCurrentlyValid } from "../../store/promotionStore";
@@ -102,7 +102,7 @@ export function PublicMenuPage() {
   }
 
   function addToCart(productId: string, name: string, price: number, addons: ProductAddon[] = []) {
-    const linePrice = price + addons.reduce((sum, addon) => sum + addon.price, 0);
+    const linePrice = price + addons.reduce((sum, addon) => sum + (addon.kind === "removal" ? 0 : addon.price), 0);
     setCart((c) => {
       const existing = c.find((l) => l.productId === productId && JSON.stringify(l.addons ?? []) === JSON.stringify(addons));
       if (existing) {
@@ -276,13 +276,17 @@ export function PublicMenuPage() {
                 <h2 className="font-display text-xl">Adicionais para {addonProduct.name}</h2>
                 <button type="button" onClick={() => setAddonProduct(null)} aria-label="Fechar"><X size={20} /></button>
               </div>
-              <div className="space-y-2">
-                {addonProduct.addons.map((addon) => (
+              <div className="space-y-4">
+                {(["addon", "removal"] as const).map((kind) => {
+                  const options = addonProduct.addons.filter((addon) => (addon.kind ?? "addon") === kind);
+                  if (!options.length) return null;
+                  return <div key={kind}><p className="mb-2 text-sm font-bold text-brand-orange">{kind === "addon" ? "Adicionais" : "Retirar ingredientes"}</p><div className="space-y-2">{options.map((addon) => (
                   <label key={addon.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
-                    <span><input type="checkbox" className="mr-2" checked={selectedAddons.some((item) => item.id === addon.id)} onChange={(event) => setSelectedAddons((items) => event.target.checked ? [...items, addon] : items.filter((item) => item.id !== addon.id))} />{addon.name}</span>
-                    <strong>{formatCurrency(addon.price)}</strong>
+                    <span><input type="checkbox" className="mr-2 accent-brand-orange" checked={selectedAddons.some((item) => item.id === addon.id)} onChange={(event) => setSelectedAddons((items) => event.target.checked ? [...items, addon] : items.filter((item) => item.id !== addon.id))} />{kind === "removal" ? `Retirar ${addon.name}` : addon.name}</span>
+                    <strong>{kind === "removal" ? "Sem custo" : `+ ${formatCurrency(addon.price)}`}</strong>
                   </label>
-                ))}
+                  ))}</div></div>;
+                })}
               </div>
               <button type="button" className="mt-5 w-full rounded-lg bg-brand-orange px-4 py-3 font-semibold text-white" onClick={() => { addToCart(addonProduct.id, addonProduct.name, addonProduct.price, selectedAddons); setAddonProduct(null); }}>
                 Adicionar ao carrinho
@@ -317,12 +321,17 @@ export function PublicMenuPage() {
               <Phone size={16} /> Ligar para a loja
             </a>
           </div>
+          <div className="flex gap-2">
+          <button type="button" onClick={() => useSettingsStore.getState().updateSettings({ darkMode: !settings.darkMode })} className="rounded-lg border border-white/30 px-3 py-2 text-sm" aria-label="Alternar tema">
+            {settings.darkMode ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
           <Link
             to="/rastreio"
             className="rounded-lg border border-brand-cream/50 px-4 py-2 text-sm font-semibold text-brand-cream hover:bg-brand-cream/10"
           >
             Rastrear meu pedido
           </Link>
+          </div>
           <Link
             to="/cliente"
             className="rounded-lg border border-white/30 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"

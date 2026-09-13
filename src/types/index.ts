@@ -18,6 +18,7 @@ export interface ProductAddon {
   id: ID;
   name: string;
   price: number;
+  kind?: "addon" | "removal";
 }
 
 export interface Product {
@@ -33,6 +34,17 @@ export interface Product {
   featured?: boolean;
   costPrice?: number; // custo de produção, para margem
   createdAt: string;
+  updatedAt: string;
+}
+
+export interface InventoryItem {
+  id: ID;
+  name: string;
+  unit: string;
+  quantity: number;
+  minimumQuantity: number;
+  costPerUnit: number;
+  active: boolean;
   updatedAt: string;
 }
 
@@ -192,6 +204,8 @@ export interface StoreSettings {
   serviceMode: "delivery" | "pickup" | "both";
   announcementText?: string;
   announcementTone?: "red" | "orange";
+  darkMode?: boolean;
+  notificationSoundUrl?: string;
   openingHours: string;
   loyalty: LoyaltySettings;
 }

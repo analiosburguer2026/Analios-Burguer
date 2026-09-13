@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { Download, Upload, Save, LogOut } from "lucide-react";
+import { Download, Upload, Save, LogOut, Volume2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardBody, CardHeader } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
@@ -22,6 +22,18 @@ export function SettingsPage() {
   const { settings, updateSettings } = useSettingsStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
+
+  function handleNotificationSound(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("audio/")) {
+      alert("Selecione um arquivo de áudio válido.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => updateSettings({ notificationSoundUrl: String(reader.result) });
+    reader.readAsDataURL(file);
+  }
 
   function handleExport() {
     const backup: Record<string, unknown> = {};
@@ -153,6 +165,19 @@ export function SettingsPage() {
           <p className="flex items-center gap-2 text-xs text-green-700">
             <Save size={14} /> As alterações são salvas automaticamente no armazenamento local.
           </p>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={settings.darkMode ?? false} onChange={(e) => updateSettings({ darkMode: e.target.checked })} /> Usar tema escuro</label>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader><h2 className="font-semibold text-brand-black">Notificação de novo pedido</h2></CardHeader>
+        <CardBody className="space-y-3">
+          <p className="text-sm text-black/50">Envie um toque de telefone em MP3, WAV ou outro formato de áudio compatível.</p>
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-brand-orange px-3 py-2 text-sm font-semibold text-brand-orange">
+            <Volume2 size={16} /> Escolher toque
+            <input type="file" accept="audio/*" className="hidden" onChange={handleNotificationSound} />
+          </label>
+          {settings.notificationSoundUrl && <Button variant="ghost" onClick={() => updateSettings({ notificationSoundUrl: undefined })}>Restaurar toque padrão</Button>}
         </CardBody>
       </Card>
 

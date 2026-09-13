@@ -15,13 +15,21 @@ import { CustomerPortalPage } from "./pages/public/CustomerPortalPage";
 import { OrderConfirmationPage } from "./pages/public/OrderConfirmationPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { OperationPage } from "./pages/OperationPage";
+import { InventoryPage } from "./pages/InventoryPage";
 import { AuthPage } from "./pages/AuthPage";
 import { ProtectedAdminRoute } from "./components/layout/ProtectedAdminRoute";
 import { useEffect } from "react";
 import { startAdminSync } from "./lib/adminSync";
 import { supabase } from "./lib/supabase";
+import { useSettingsStore } from "./store/settingsStore";
 
 function App() {
+  const darkMode = useSettingsStore((state) => state.settings.darkMode ?? false);
+
+  useEffect(() => {
+    document.body.classList.toggle("theme-dark", darkMode);
+  }, [darkMode]);
+
   useEffect(() => {
     let stopSync: (() => void) | undefined;
     let cancelled = false;
@@ -76,6 +84,7 @@ function App() {
           <Route path="/gestao" element={<AdminLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="operacao" element={<OperationPage />} />
+          <Route path="estoque" element={<InventoryPage />} />
           <Route path="pedidos" element={<OrdersPage />} />
           <Route path="catalogo" element={<CatalogPage />} />
           <Route path="promocoes" element={<PromotionsPage />} />

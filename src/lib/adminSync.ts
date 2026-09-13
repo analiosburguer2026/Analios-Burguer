@@ -7,6 +7,7 @@ import { useOrderStore } from "../store/orderStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { useWhatsAppStore } from "../store/whatsappStore";
 import { useOperationStore } from "../store/operationStore";
+import { useInventoryStore } from "../store/inventoryStore";
 
 type AppStateKey =
   | "catalog"
@@ -16,7 +17,8 @@ type AppStateKey =
   | "orders"
   | "settings"
   | "whatsapp"
-  | "operation";
+  | "operation"
+  | "inventory";
 
 type AppStateData = Record<AppStateKey, Record<string, unknown>>;
 type SyncRow = { key: AppStateKey; data: Record<string, unknown> };
@@ -49,6 +51,7 @@ function getState(): AppStateData {
       cashOpeningAmount: useOperationStore.getState().cashOpeningAmount,
       cashEntries: useOperationStore.getState().cashEntries,
     },
+    inventory: { items: useInventoryStore.getState().items },
   };
 }
 
@@ -77,6 +80,9 @@ function applyState(key: AppStateKey, data: Record<string, unknown>) {
       break;
     case "operation":
       useOperationStore.setState(data as never);
+      break;
+    case "inventory":
+      useInventoryStore.setState(data as never);
       break;
   }
 }
@@ -123,6 +129,7 @@ export async function startAdminSync(): Promise<() => void> {
     useSettingsStore.subscribe(scheduleSave),
     useWhatsAppStore.subscribe(scheduleSave),
     useOperationStore.subscribe(scheduleSave),
+    useInventoryStore.subscribe(scheduleSave),
   ];
 
   const channel = supabase

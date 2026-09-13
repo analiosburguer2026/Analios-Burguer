@@ -7,7 +7,7 @@ import { Modal } from "../components/ui/Modal";
 import { Field, Input, Select, Textarea } from "../components/ui/Form";
 import { useCatalogStore } from "../store/catalogStore";
 import { formatCurrency } from "../lib/utils";
-import type { Product } from "../types";
+import type { Product, ProductAddon } from "../types";
 
 const emptyForm = {
   name: "",
@@ -111,9 +111,11 @@ export function CatalogPage() {
       active: form.active,
       featured: form.featured,
       addons: form.addonsEnabled
-        ? form.addonsText.split("\n").map((line, index) => {
-            const [name, price] = line.split("|");
-            return { id: `addon-${index}-${name.trim()}`, name: name.trim(), price: Number((price ?? "").replace(",", ".")) || 0 };
+        ? form.addonsText.split("\n").map((line, index): ProductAddon => {
+            const [rawName, price] = line.split("|");
+            const removal = rawName.trim().startsWith("-");
+            const name = removal ? rawName.trim().slice(1).trim() : rawName.trim();
+            return { id: `addon-${index}-${name}`, name, price: removal ? 0 : Number((price ?? "").replace(",", ".")) || 0, kind: removal ? "removal" : "addon" };
           }).filter((addon) => addon.name)
         : [],
     };
